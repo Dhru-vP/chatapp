@@ -13,12 +13,27 @@ function App() {
 
   const scrollRef = useRef();
 
+  // ✅ SOCKET CONNECTION (FIXED)
   useEffect(() => {
-    const newSocket = io("https://chatapp-acew.onrender.com");
+    const newSocket = io("https://chatapp-acew.onrender.com", {
+      transports: ["websocket"],
+      withCredentials: true,
+    });
+
+    newSocket.on("connect", () => {
+      console.log("Connected:", newSocket.id);
+    });
+
+    newSocket.on("connect_error", (err) => {
+      console.log("Socket error:", err);
+    });
+
     setSocket(newSocket);
-    return () => newSocket.close();
+
+    return () => newSocket.disconnect();
   }, []);
 
+  // auto scroll
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messageList]);
@@ -51,54 +66,67 @@ function App() {
     setTimeout(() => socket.emit("stop_typing", { room }), 1000);
   };
 
-const handleFileUpload = async (e) => {
-  const file = e.target.files[0];
+  // ✅ IMAGE UPLOAD (FIXED)
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
 
-  if (!file) return;
+    if (!file) return;
 
-  if (file.size > 2 * 1024 * 1024) {
-    alert("File too large (max 2MB)");
-    return;
-  }
-
-  const reader = new FileReader();
-
-  reader.onloadend = async () => {
-    try {
-      const res = await fetch("https://chatapp-acew.onrender.com/upload", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ image: reader.result }),
-      });
-
-      const data = await res.json();
-
-      socket.emit("send_message", {
-        room,
-        author: username,
-        message: data.url,
-        type: "image",
-        time: new Date().toLocaleTimeString(),
-      });
-
-    } catch (err) {
-      console.log("Upload error:", err);
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File too large (max 2MB)");
+      return;
     }
+
+    const reader = new FileReader();
+
+    reader.onloadend = async () => {
+      try {
+        const res = await fetch(
+          "https://chatapp-acew.onrender.com/upload",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ image: reader.result }),
+          }
+        );
+
+        const data = await res.json();
+
+        if (!data.url) {
+          console.log("Upload failed:", data);
+          return;
+        }
+
+        socket.emit("send_message", {
+          room,
+          author: username,
+          message: data.url,
+          type: "image",
+          time: new Date().toLocaleTimeString(),
+        });
+
+      } catch (err) {
+        console.log("Upload error:", err);
+      }
+    };
+
+    reader.readAsDataURL(file);
   };
 
-  reader.readAsDataURL(file);
-};
-
+  // listeners
   useEffect(() => {
     if (!socket) return;
 
     socket.on("load_messages", setMessageList);
+
     socket.on("receive_message", (data) =>
       setMessageList((list) => [...list, data])
     );
+
     socket.on("online_users", setUsers);
+
     socket.on("typing", setTypingUser);
     socket.on("stop_typing", () => setTypingUser(""));
 
@@ -111,17 +139,14 @@ const handleFileUpload = async (e) => {
   }, [socket]);
 
   return (
-    <div className="h-screen flex bg-[#0f172a] text-white font-sans">
+    <div className="h-screen flex bg-[#0f172a] text-white">
 
       {/* Sidebar */}
       <div className="w-[280px] bg-[#111827] border-r border-gray-700 flex flex-col">
-
-        {/* App Title */}
         <div className="p-4 text-lg font-semibold border-b border-gray-700">
           💬 ChatApp
         </div>
 
-        {/* Room */}
         <div className="p-4 border-b border-gray-700">
           <div className="text-xs text-gray-400">Current Room</div>
           <div className="mt-1 bg-gray-800 p-2 rounded-md">
@@ -129,14 +154,10 @@ const handleFileUpload = async (e) => {
           </div>
         </div>
 
-        {/* Users */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="text-xs text-gray-400 mb-2">Online Users</div>
           {users.map((user, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700 transition"
-            >
+            <div key={i} className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded">
               <div className="w-2 h-2 bg-green-400 rounded-full"></div>
               {user}
             </div>
@@ -167,85 +188,70 @@ const handleFileUpload = async (e) => {
 
             <button
               onClick={joinRoom}
-              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+              className="w-full bg-blue-600 text-white py-2 rounded"
             >
               Join Room
             </button>
           </div>
         ) : (
-          <div className="w-[600px] h-[650px] bg-white text-black rounded-xl shadow-xl flex flex-col overflow-hidden">
+          <div className="w-[600px] h-[650px] bg-white text-black rounded-xl shadow-xl flex flex-col">
 
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-4 font-medium">
+            <div className="bg-blue-600 text-white p-4 text-center">
               Room: {room}
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+            <div className="flex-1 p-4 overflow-y-auto bg-gray-100">
               {messageList.map((msg, i) => (
                 <div
                   key={i}
                   className={`flex mb-3 ${
-                    msg.author === username
-                      ? "justify-end"
-                      : "justify-start"
+                    msg.author === username ? "justify-end" : "justify-start"
                   }`}
                 >
                   <div
-                    className={`px-3 py-2 rounded-lg max-w-[70%] text-sm shadow-sm ${
+                    className={`p-2 rounded max-w-[70%] ${
                       msg.author === username
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200"
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-300"
                     }`}
                   >
-                    <div className="font-medium text-xs mb-1">
-                      {msg.author}
-                    </div>
+                    <b>{msg.author}</b>
 
                     {msg.type === "image" ? (
-                      <img
-                        src={msg.message}
-                        alt=""
-                        className="rounded-md max-w-[200px]"
-                      />
+                      <img src={msg.message} alt="" className="mt-1 rounded w-40" />
                     ) : (
-                      msg.message
+                      <div>{msg.message}</div>
                     )}
 
-                    <div className="text-[10px] mt-1 text-right opacity-70">
-                      {msg.time}
-                    </div>
+                    <div className="text-xs">{msg.time}</div>
                   </div>
                 </div>
               ))}
-
               <div ref={scrollRef}></div>
             </div>
 
-            {/* Typing */}
             {typingUser && (
-              <div className="px-4 py-1 text-xs text-gray-500">
+              <div className="text-sm px-4 text-gray-500">
                 {typingUser} is typing...
               </div>
             )}
 
-            {/* Input */}
-            <div className="p-3 border-t flex items-center gap-2 bg-white">
+            <div className="p-3 border-t flex gap-2">
               <input
                 value={message}
                 onChange={(e) => {
                   setMessage(e.target.value);
                   handleTyping();
                 }}
-                className="flex-1 border rounded-full px-4 py-2 text-sm outline-none"
-                placeholder="Type a message..."
+                className="flex-1 border p-2 rounded"
+                placeholder="Type message..."
               />
 
               <input type="file" onChange={handleFileUpload} />
 
               <button
                 onClick={sendMessage}
-                className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition"
+                className="bg-blue-600 text-white px-4 rounded"
               >
                 Send
               </button>
