@@ -13,12 +13,11 @@ function App() {
 
   const scrollRef = useRef();
 
-  // ✅ SOCKET CONNECTION (FIXED)
   useEffect(() => {
     const newSocket = io("https://chatapp-acew.onrender.com", {
-      transports: ["websocket"],
-      withCredentials: true,
-    });
+  transports: ["websocket", "polling"], // ✅ IMPORTANT
+  withCredentials: true,
+});
 
     newSocket.on("connect", () => {
       console.log("Connected:", newSocket.id);
