@@ -14,7 +14,7 @@ function App() {
   const scrollRef = useRef();
 
   useEffect(() => {
-    const newSocket = io("http://localhost:5000");
+    const newSocket = io("https://chatapp-acew.onrender.com");
     setSocket(newSocket);
     return () => newSocket.close();
   }, []);
@@ -65,7 +65,7 @@ const handleFileUpload = async (e) => {
 
   reader.onloadend = async () => {
     try {
-      const res = await fetch("http://localhost:5000/upload", {
+      const res = await fetch("https://chatapp-acew.onrender.com/upload", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
