@@ -15,7 +15,7 @@ function App() {
 
   useEffect(() => {
   const newSocket = io("https://chatapp-acew.onrender.com", {
-  transports: ["polling"], // 🔥 FORCE POLLING
+  transports: ["polling"], 
 });
 
     newSocket.on("connect", () => {
@@ -64,7 +64,7 @@ function App() {
     setTimeout(() => socket.emit("stop_typing", { room }), 1000);
   };
 
-  // ✅ IMAGE UPLOAD (FIXED)
+  
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
 

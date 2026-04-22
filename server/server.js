@@ -14,9 +14,8 @@ const server = http.createServer(app);
 const CLIENT_URL = "https://chatapp-ten-virid.vercel.app";
 
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: "https://chatapp-ten-virid.vercel.app",
   methods: ["GET", "POST"],
-  credentials: true,
 }));
 
 app.use(express.json({ limit: "10mb" }));
