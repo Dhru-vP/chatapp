@@ -13,8 +13,9 @@ const server = http.createServer(app);
 
 const CLIENT_URL = "https://chatapp-ten-virid.vercel.app";
 
+// ✅ CORS
 app.use(cors({
-  origin: "https://chatapp-ten-virid.vercel.app",
+  origin: CLIENT_URL,
   methods: ["GET", "POST"],
 }));
 
@@ -23,21 +24,12 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.use("/upload", uploadRoute);
 
-
+// ✅ SOCKET
 const io = new Server(server, {
   cors: {
-    origin: "https://chatapp-ten-virid.vercel.app",
+    origin: CLIENT_URL,
     methods: ["GET", "POST"],
   },
-});
-
-socket.on("send_message", async (data) => {
-  console.log("Message received:", data); // 🔥 DEBUG
-
-  const newMessage = new Message(data);
-  await newMessage.save();
-
-  io.to(data.room).emit("receive_message", data);
 });
 
 // DB
@@ -65,6 +57,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send_message", async (data) => {
+    console.log("Message received:", data); // ✅ debug
+
     const newMessage = new Message(data);
     await newMessage.save();
 
