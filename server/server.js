@@ -13,11 +13,13 @@ const server = http.createServer(app);
 
 const CLIENT_URL = "https://chatapp-ten-virid.vercel.app";
 
-app.use(cors({
-  origin: CLIENT_URL,
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"],
-}));
+app.use(cors());
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
@@ -95,4 +97,14 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log("Server running"));
+server.listen(PORT, "0.0.0.0", () => {
+  console.log("Server running on", PORT);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err);
+});
