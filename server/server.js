@@ -13,10 +13,10 @@ const server = http.createServer(app);
 
 const CLIENT_URL = "https://chatapp-ten-virid.vercel.app";
 
-// ✅ CORS
 app.use(cors({
   origin: CLIENT_URL,
   methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
 }));
 
 app.use(express.json({ limit: "10mb" }));
@@ -24,10 +24,9 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.use("/upload", uploadRoute);
 
-// ✅ SOCKET
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL,
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
