@@ -11,7 +11,6 @@ const uploadRoute = require("./routes/upload");
 const app = express();
 const server = http.createServer(app);
 
-// ✅ FIXED CORS (IMPORTANT)
 const CLIENT_URL = "https://chatapp-ten-virid.vercel.app";
 
 app.use(cors({
@@ -25,14 +24,21 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.use("/upload", uploadRoute);
 
-// ✅ SOCKET FIX
+
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL,
+    origin: "https://chatapp-ten-virid.vercel.app",
     methods: ["GET", "POST"],
-    credentials: true,
   },
-  transports: ["websocket", "polling"],
+});
+
+socket.on("send_message", async (data) => {
+  console.log("Message received:", data); // 🔥 DEBUG
+
+  const newMessage = new Message(data);
+  await newMessage.save();
+
+  io.to(data.room).emit("receive_message", data);
 });
 
 // DB

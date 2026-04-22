@@ -14,9 +14,8 @@ function App() {
   const scrollRef = useRef();
 
   useEffect(() => {
-    const newSocket = io("https://chatapp-acew.onrender.com", {
-  transports: ["websocket", "polling"], // ✅ IMPORTANT
-  withCredentials: true,
+  const newSocket = io("https://chatapp-acew.onrender.com", {
+  transports: ["polling"], // 🔥 FORCE POLLING
 });
 
     newSocket.on("connect", () => {
